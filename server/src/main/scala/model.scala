@@ -1,3 +1,6 @@
+// ---------------------------- Packages ----------------------------
+type PackageReference = Package | Dependency
+
 case class Package(
     name: String,
     description: String,
@@ -10,15 +13,15 @@ enum Dependency:
   case UnVersioned(name: String)
   case Alternatives(deps: Seq[Dependency])
 
-type PackageReference = Package | Dependency
+// ---------------------------- Control file ----------------------------
 
 case class ControlFileParagraph(contents: Map[ControlFile.Field, ControlFile.FieldData])
 
 object ControlFile:
-  opaque type Field = String
+  opaque type Field     = String
   opaque type FieldData = String
 
-  def Field(str: String): Field = str
+  def Field(str: String): Field         = str
   def FieldData(str: String): FieldData = str
 
   extension (field: Field) def name: String = field
