@@ -1,17 +1,27 @@
 // ---------------------------- Packages ----------------------------
-type PackageReference = Package | Dependency
-
 case class Package(
+    id: String,
     name: String,
     description: String,
-    dependencies: Set[Dependency],
-    reverseDependencies: Set[Dependency],
+    dependencies: Set[Dependency[PackageReference]],
+    reverseDependencies: Set[PackageReference], // A.k.a dependents
   )
 
-enum Dependency:
-  case Versioned(name: String, version: String)
-  case UnVersioned(name: String)
-  case Alternatives(deps: Seq[Dependency])
+enum Dependency[A]:
+  case Direct(dependency: A)
+  case OneOf(alternatives: Set[A]) // TODO NonEmpty collection
+
+  def toSet: Set[A] = this match
+    case Direct(d) => Set(d)
+    case OneOf(as) => as
+
+  def map[B](f: A => B): Dependency[B] = this match
+    case Direct(d) => Direct(f(d))
+    case OneOf(as) => OneOf(as.map(f))
+
+enum PackageReference:
+  case Known(id: String, name: String)
+  case Unknown(name: String)
 
 // ---------------------------- Control file ----------------------------
 

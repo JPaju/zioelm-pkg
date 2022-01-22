@@ -4,16 +4,20 @@ import zhttp.http.*
 
 object Controller:
   val httpApp: HttpApp[Has[PackageService], Nothing] = Http.collectZIO[Request] {
-    case Method.GET -> !! / "packages" =>
-      PackageService.getPackages.map { pkgs =>
-        val dtos = pkgs.map(ConsicePackageDTO.fromPackage)
-        Response.json(dtos.toJson)
-      }
-    case Method.GET -> !! / "packages" / name =>
-      PackageService
-        .getPackageByName(name)
-        .fold(
-          err => Response.status(Status.NOT_FOUND),
-          pkg => Response.json(PackageDTO.fromPackage(pkg).toJson),
-        )
+    case Method.GET -> !! / "packages"      => packageListing
+    case Method.GET -> !! / "packages" / id => findPackageById(id)
   }
+
+  private def packageListing =
+    PackageService.getPackages.map { pkgs =>
+      val dtos = pkgs.map(PackageDTO.fromPackage)
+      Response.json(dtos.toJson)
+    }
+
+  private def findPackageById(id: String) =
+    PackageService
+      .getPackageByName(id)
+      .fold(
+        err => Response.status(Status.NOT_FOUND),
+        pkg => Response.json(PackageDetailsDTO.fromPackage(pkg).toJson),
+      )

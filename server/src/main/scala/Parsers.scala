@@ -1,3 +1,4 @@
+import zio.NonEmptyChunk
 object ControlFileParser:
   def parseParagraph(paragraph: String): ControlFileParagraph =
     def loop(rows: Seq[String]): Seq[(ControlFile.Field, ControlFile.FieldData)] =
@@ -8,7 +9,10 @@ object ControlFileParser:
               val (continuationRows, leftOverRows) = followingRows.span(_.startsWith(" "))
 
               val leftTrimmedFirstRow = firstDataRow.replaceAll("^\\s+", "").nn
-              val fieldData           = (leftTrimmedFirstRow +: continuationRows).mkString("\n")
+              val trimmedContinuationRows = continuationRows
+                .map(_.trim.nn)
+                .filter(_.exists(_.isLetterOrDigit))
+              val fieldData = (leftTrimmedFirstRow +: trimmedContinuationRows).mkString(" ")
 
               val dataField = ControlFile.Field(fieldName) -> ControlFile.FieldData(fieldData)
               dataField +: loop(leftOverRows)
@@ -23,29 +27,33 @@ object ControlFileParser:
 end ControlFileParser
 
 object DependencyParser:
-  def parseDependencies(dependencyString: String): Seq[Dependency] =
+  def parseDependencies(dependencyString: String): Set[Dependency[String]] =
     dependencyString
       .split(',')
-      .toIndexedSeq
       .map(_.trim.nn)
       .filter(_.nonEmpty)
-      .map(str => parseDependency(str))
+      .map(parseDependencyEntry)
+      .toSet
 
-  private def parseDependency(dependencyField: String): Dependency =
-    dependencyField match
-      case s"$current | $rest" => parseAlternatives(current, rest)
-      case s"$name ($version)" => Dependency.Versioned(name, version)
-      case name                => Dependency.UnVersioned(name)
+  private def parseDependencyEntry(dependencyEntry: String): Dependency[String] =
+    val dependencies = parseDependency(dependencyEntry)
 
-  private def parseAlternatives(firstAlternativeStr: String, restAlternativesStr: String): Dependency =
-    val firstAlternative = parseDependency(firstAlternativeStr)
-    val restAlternatives = parseDependency(restAlternativesStr)
+    dependencies.length match
+      case 1 => Dependency.Direct(dependencies.head)
+      case _ => Dependency.OneOf(dependencies.toSet)
 
-    restAlternatives match
-      case Dependency.Alternatives(rest) => Dependency.Alternatives(firstAlternative +: rest)
-      case lastAlternative               => Dependency.Alternatives(Seq(firstAlternative, lastAlternative))
+  private def parseDependency(str: String): NonEmptyChunk[String] =
+    str match
+      case s"$current | $rest" => parseDependency(rest) ++ parseDependency(current)
+      case s"$last ($version)" => NonEmptyChunk(last)
+      case last                => NonEmptyChunk(last)
 
 end DependencyParser
+
+/** Package parsed from control file, with limited information about dependencies
+  */
+case class PackageEntry(name: String, description: String, dependencies: Set[Dependency[String]]):
+  def id = name // Use name as id since it should be unique
 
 object PackageParser:
   private val nameField         = ControlFile.Field("Package")
@@ -68,9 +76,3 @@ object PackageParser:
     (nameOption, descriptionOption) match
       case (Some(name), Some(description)) => Right(PackageEntry(name.data, description.data, dependencies))
       case _                               => Left(controlFile)
-
-/** Intermediate package representation without reverse dependencies, because those are not specified in control file
-  */
-case class PackageEntry(name: String, description: String, dependencies: Set[Dependency]):
-  def toPackage(reverseDependencies: Set[Dependency]): Package =
-    Package(name, description, dependencies, reverseDependencies)

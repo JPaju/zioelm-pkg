@@ -1,18 +1,48 @@
-import zio.json.JsonEncoder
-import zio.json.DeriveJsonEncoder
+import zio.json.*
 
-case class PackageDTO(name: String, description: String)
+case class PackageDTO(id: String, name: String)
+
+case class PackageDetailsDTO(
+    id: String,
+    name: String,
+    description: String,
+    dependencies: Set[DependencyDTO],
+    reverseDependencies: Set[DependencyDTO],
+  )
+
+// Cannot use enum here because zio-json lacks support for them
+sealed trait DependencyDTO
+@jsonHint("knownPackage") case class KnonwPackageDTO(id: String, name: String)   extends DependencyDTO
+@jsonHint("unknownPackage") case class UnknownPackageDTO(name: String)           extends DependencyDTO
+@jsonHint("oneOfPackages") case class OneOfDTO(alternatives: Set[DependencyDTO]) extends DependencyDTO
 
 object PackageDTO:
   def fromPackage(pkg: Package): PackageDTO =
-    PackageDTO(pkg.name, pkg.description)
+    PackageDTO(pkg.name, pkg.name)
 
   given JsonEncoder[PackageDTO] = DeriveJsonEncoder.gen[PackageDTO]
 
-case class ConsicePackageDTO(name: String)
+object PackageDetailsDTO:
+  def fromPackage(pkg: Package): PackageDetailsDTO =
+    PackageDetailsDTO(
+      id = pkg.id,
+      name = pkg.name,
+      description = pkg.description,
+      dependencies = pkg.dependencies.map(DependencyDTO.fromDependency),
+      reverseDependencies = pkg.reverseDependencies.map(DependencyDTO.fromPackageReference),
+    )
 
-object ConsicePackageDTO:
-  def fromPackage(pkg: Package): ConsicePackageDTO =
-    ConsicePackageDTO(pkg.name)
+  given JsonEncoder[PackageDetailsDTO] = DeriveJsonEncoder.gen[PackageDetailsDTO]
 
-  given JsonEncoder[ConsicePackageDTO] = DeriveJsonEncoder.gen[ConsicePackageDTO]
+object DependencyDTO:
+  def fromPackageReference(reference: PackageReference): DependencyDTO =
+    reference match
+      case PackageReference.Known(id, name) => KnonwPackageDTO(id, name)
+      case PackageReference.Unknown(name)   => UnknownPackageDTO(name)
+
+  def fromDependency(dependency: Dependency[PackageReference]): DependencyDTO =
+    dependency match
+      case Dependency.Direct(dep) => fromPackageReference(dep)
+      case Dependency.OneOf(deps) => OneOfDTO(deps.map(fromPackageReference))
+
+  given JsonEncoder[DependencyDTO] = DeriveJsonEncoder.gen[DependencyDTO]

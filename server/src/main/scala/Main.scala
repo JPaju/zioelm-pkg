@@ -25,6 +25,6 @@ object Main extends zio.App:
 
   def run(args: List[String]): URIO[ZEnv, ExitCode] =
     Server
-      .start(8090, Controller.httpApp.silent)
+      .start(8080, Controller.httpApp.silent)
       .provideCustomLayer(dependencies)
       .exitCode
