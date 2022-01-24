@@ -11,10 +11,10 @@ case class PackageDetailsDTO(
   )
 
 // Cannot use enum here because zio-json lacks support for them
-sealed trait DependencyDTO
-@jsonHint("knownPackage") case class KnonwPackageDTO(id: String, name: String)   extends DependencyDTO
-@jsonHint("unknownPackage") case class UnknownPackageDTO(name: String)           extends DependencyDTO
-@jsonHint("oneOfPackages") case class OneOfDTO(alternatives: Set[DependencyDTO]) extends DependencyDTO
+@jsonDiscriminator("type") sealed trait DependencyDTO
+@jsonHint("known") case class KnonwPackageDTO(id: String, name: String)         extends DependencyDTO
+@jsonHint("unknown") case class UnknownPackageDTO(name: String)                 extends DependencyDTO
+@jsonHint("alternatives") case class OneOfDTO(alternatives: Set[DependencyDTO]) extends DependencyDTO
 
 object PackageDTO:
   def fromPackage(pkg: Package): PackageDTO =
