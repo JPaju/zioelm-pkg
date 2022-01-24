@@ -3,14 +3,10 @@ module Main exposing (..)
 import Api exposing (RemoteData(..))
 import Browser exposing (UrlRequest)
 import Browser.Navigation as Nav
-import Element exposing (Element, centerX, centerY, fill, height, layout, mouseOver, paddingXY, pointer, px, row, spacing, width)
-import Element.Background as Background
-import Element.Border as Border
-import Element.Font as Font
+import Element exposing (Element,fill, height, layout,  paddingXY, width)
 import Page.Details as Details
 import Page.Listing as Listing
 import Route
-import Ui as Ui
 import Url exposing (Url)
 
 
@@ -36,12 +32,9 @@ type Msg
     | GotDetailsMsg Details.Msg
 
 
-
--- TODO Parse url here and show page accordingly
-
-
 init : Url -> Nav.Key -> ( Model, Cmd Msg )
 init url key =
+    -- TODO Parse url here and show page accordingly
     let
         ( model, cmd ) =
             Listing.init
@@ -124,41 +117,12 @@ view model =
             pageLayout (Details.view packageDetails) GotDetailsMsg
 
 
-
-----  PAGES ----
-
-
 pageLayout : Element msg -> (msg -> Msg) -> Browser.Document Msg
 pageLayout content toMsg =
     { title = "Package explorer"
     , body =
-        [ layout [ height fill, width fill ] (Element.map toMsg content) ]
+        [ layout [ height fill, width fill, paddingXY 10 10 ] (Element.map toMsg content) ]
     }
-
-
-homePage : Element msg
-homePage =
-    row [ width fill, centerX, centerY, spacing 20 ]
-        [ navLink "Zsh" "/zsh"
-        , navLink "Gawk" "/gawk"
-        ]
-
-
-navLink : String -> String -> Element msg
-navLink label href =
-    Element.link
-        [ centerX
-        , width (px 300)
-        , Font.color Ui.white
-        , Font.center
-        , Font.size 32
-        , Background.color Ui.blue
-        , mouseOver [ Background.color Ui.black ]
-        , Border.rounded 10
-        , paddingXY 20 50
-        , pointer
-        ]
-        { url = href, label = Element.text label }
 
 
 

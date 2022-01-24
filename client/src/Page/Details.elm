@@ -1,10 +1,11 @@
 module Page.Details exposing (..)
 
 import Api exposing (RemoteData(..))
-import Element exposing (Element, column, el, text)
+import Element exposing (Element, centerX, column, el, fill, maximum, paragraph, spacing, text, width)
 import Http
-import Package exposing (PackageDetails)
+import Package exposing (Dependency(..), PackageDetails, viewDependency)
 import Ui
+import Html exposing (details)
 
 
 type alias Model =
@@ -44,7 +45,32 @@ view { details } =
 
         Finished packageDetails ->
             let
-                detailsText =
-                    "Showing information about " ++ packageDetails.name ++ ". Description: " ++ packageDetails.description
+                headerText =
+                    "Package: " ++ packageDetails.name
             in
-            column [] [ el [] (text detailsText) ]
+            column [ width fill, spacing 20 ]
+                [ Ui.pageHeader [ centerX ] headerText
+                , viewDetails packageDetails
+                ]
+
+
+viewDetails : PackageDetails -> Element msg
+viewDetails { description, dependencies, reverseDependencies } =
+    column [ centerX, width (fill |> maximum 700), spacing 50 ]
+        [ detailsPageSection "Description" (paragraph [] [ el [] (text description) ])
+        , detailsPageSection "Dependencies" (viewDependencies dependencies)
+        , detailsPageSection "Reverse dependencies"  (viewDependencies reverseDependencies)
+        ]
+
+
+detailsPageSection : String -> Element msg -> Element msg
+detailsPageSection sectionTitle content =
+    column [ spacing 10 ]
+        [ Ui.subHeader [] sectionTitle
+        , content
+        ]
+
+
+viewDependencies : List Dependency -> Element msg
+viewDependencies dependencies =
+    column [ spacing 10 ] (List.map viewDependency dependencies)

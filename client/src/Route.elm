@@ -1,6 +1,5 @@
-module Route exposing (Route(..), fromUrl, packageUrl)
+module Route exposing (Route(..), fromUrl)
 
-import Package exposing (Package)
 import Url exposing (Url)
 import Url.Parser as Parser exposing ((</>), string)
 
@@ -17,11 +16,6 @@ type alias PackageId =
 fromUrl : Url -> Route
 fromUrl =
     Parser.parse parser >> Maybe.withDefault Listing
-
-
-packageUrl : Package -> String
-packageUrl { id } =
-    "/package/" ++ id
 
 
 parser : Parser.Parser (Route -> a) a

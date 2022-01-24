@@ -1,16 +1,11 @@
-module Ui exposing (black, blue, grey, loadingSpinner, pageHeader, red, textInput, white, loadingPage, errorPage)
+module Ui exposing (blue, errorPage, grey, loadingPage, loadingSpinner, pageHeader, red, subHeader, textInput)
 
-import Element exposing (Attribute, Color, Element, el, fill, maximum, text, width)
+import Element exposing (Attribute, Color, Element, centerX, centerY, column, el, fill, maximum, row, spacing, text, width)
 import Element.Font as Font
 import Element.Input as Input
 import Element.Region as Region
 import Widget exposing (circularProgressIndicator)
 import Widget.Material exposing (defaultPalette, progressIndicator)
-import Element exposing (column)
-import Element exposing (centerX)
-import Element exposing (centerY)
-import Element exposing (spacing)
-import Element exposing (row)
 
 
 spinnerStyles : Widget.ProgressIndicatorStyle msg
@@ -25,8 +20,13 @@ loadingSpinner attrs =
 
 
 pageHeader : List (Attribute msg) -> String -> Element msg
-pageHeader attributes title =
-    el (attributes ++ [ Region.heading 2, Font.size 32, Font.semiBold ]) (text title)
+pageHeader attributes headerText =
+    el (attributes ++ [ Region.heading 2, Font.size 32, Font.semiBold ]) (text headerText)
+
+
+subHeader : List (Attribute msg) -> String -> Element msg
+subHeader attributes headerText =
+    el (attributes ++ [ Region.heading 3, Font.size 24, Font.semiBold ]) (text headerText)
 
 
 loadingPage : String -> Element msg
@@ -79,13 +79,3 @@ blue =
 grey : Color
 grey =
     Element.rgb255 224 224 224
-
-
-black : Color
-black =
-    Element.rgb255 0 0 0
-
-
-white : Color
-white =
-    Element.rgb255 255 255 255
