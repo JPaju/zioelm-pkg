@@ -1,6 +1,4 @@
 import zio.*
-import zio.stream.*
-import zio.blocking.*
 import java.nio.file.{ Paths, Path }
 
 trait PackageReader:

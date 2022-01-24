@@ -8,7 +8,7 @@ import Ui
 
 
 type alias Model =
-    { listing : RemoteData Http.Error PackageListing
+    { remoteListing : RemoteData Http.Error PackageListing
     , searchText : String
     }
 
@@ -20,7 +20,7 @@ type Msg
 
 init : ( Model, Cmd Msg )
 init =
-    ( { listing = Loading
+    ( { remoteListing = Loading
       , searchText = ""
       }
     , Api.fetchPackageListing GotPackageListing
@@ -33,31 +33,36 @@ update msg model =
         GotPackageListing listingResult ->
             case listingResult of
                 Ok listing ->
-                    ( { model | listing = Finished listing }, Cmd.none )
+                    ( { model | remoteListing = Finished listing }, Cmd.none )
 
                 Err httpErr ->
-                    ( { model | listing = Errored httpErr }, Cmd.none )
+                    ( { model | remoteListing = Errored httpErr }, Cmd.none )
 
         SearchTextChanged searchText ->
             ( { model | searchText = searchText }, Cmd.none )
 
 
 view : Model -> Element Msg
-view { listing, searchText } =
-    case listing of
+view { remoteListing, searchText } =
+    case remoteListing of
         Loading ->
             Ui.loadingPage "Listing"
 
         Errored _ ->
             Ui.errorPage "Something went wrong while loading packages"
 
-        Finished lst ->
-            let
-                filteredListing =
-                    List.filter (\l -> String.contains searchText l.name) lst
-            in
-            column [ centerX, paddingXY 20 20, width (shrink |> minimum 450), spacing 50 ]
-                [ Ui.pageHeader [ centerY, centerX, height (px 50) ] "All packages"
-                , Ui.textInput [ centerX ] "Search packages" SearchTextChanged searchText
-                , column [ spacing 5, width fill ] (List.map viewPackage filteredListing)
-                ]
+        Finished listing ->
+            viewListing listing searchText
+
+
+viewListing : PackageListing -> String -> Element Msg
+viewListing listing searchText =
+    let
+        filteredListing =
+            List.filter (\l -> String.contains searchText l.name) listing
+    in
+    column [ centerX, paddingXY 20 20, width (shrink |> minimum 450), spacing 50 ]
+        [ Ui.pageHeader [ centerY, centerX, height (px 50) ] "All packages"
+        , Ui.textInput [ centerX ] "Search packages" SearchTextChanged searchText
+        , column [ spacing 5, width fill, centerX ] (List.map viewPackage filteredListing)
+        ]

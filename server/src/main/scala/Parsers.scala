@@ -1,4 +1,5 @@
 import zio.NonEmptyChunk
+
 object ControlFileParser:
   def parseParagraph(paragraph: String): ControlFileParagraph =
     def loop(rows: Seq[String]): Seq[(ControlFile.Field, ControlFile.FieldData)] =
