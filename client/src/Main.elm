@@ -2,7 +2,10 @@ module Main exposing (..)
 
 import Browser exposing (UrlRequest)
 import Browser.Navigation as Nav
-import Element exposing (Element,fill, height, layout,  paddingXY, width)
+import Element exposing (Element, alignRight, centerX, column, el, fill, height, inFront, layout, link, mouseOver, paddingXY, px, row, spacingXY, text, width)
+import Element.Background as Background
+import Element.Border as Border
+import Element.Font as Font
 import Page.Details as Details
 import Page.Listing as Listing
 import Route
@@ -121,10 +124,36 @@ view model =
 
 pageLayout : Element msg -> (msg -> Msg) -> Browser.Document Msg
 pageLayout content toMsg =
+    let
+        pageContent =
+            column [ height fill, width fill, spacingXY 0 30 ]
+                [ topBar
+                , Element.map toMsg content
+                ]
+    in
     { title = "Package explorer"
-    , body =
-        [ layout [ height fill, width fill, paddingXY 10 10 ] (Element.map toMsg content) ]
+    , body = [ layout [ inFront topBar ] pageContent ]
     }
+
+
+topBar : Element msg
+topBar =
+    let
+        title =
+            el [ Font.size 36, centerX ] (text "Package Explorer")
+
+        homeLink =
+            link
+                [ paddingXY 10 10
+                , alignRight
+                , Background.color Ui.blue
+                , Border.rounded 20
+                , mouseOver [ Background.color Ui.grey ]
+                ]
+                { url = "/", label = text "Home" }
+    in
+    row [ width fill, height (px 70), Background.color Ui.indigo, paddingXY 50 5 ]
+        [ title, homeLink ]
 
 
 

@@ -2,6 +2,7 @@ module Ui exposing
     ( blue
     , errorPage
     , grey
+    , indigo
     , loadingPage
     , loadingSpinner
     , notFoundPage
@@ -99,6 +100,11 @@ red =
 blue : Color
 blue =
     Element.rgb255 95 171 220
+
+
+indigo : Color
+indigo =
+    Element.rgb255 153 140 221
 
 
 grey : Color
