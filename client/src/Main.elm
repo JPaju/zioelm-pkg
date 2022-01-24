@@ -1,12 +1,12 @@
 module Main exposing (..)
 
-import Api exposing (RemoteData(..))
 import Browser exposing (UrlRequest)
 import Browser.Navigation as Nav
 import Element exposing (Element,fill, height, layout,  paddingXY, width)
 import Page.Details as Details
 import Page.Listing as Listing
 import Route
+import Ui exposing (notFoundPage)
 import Url exposing (Url)
 
 
@@ -23,6 +23,7 @@ type alias Model =
 type Page
     = ListingPage Listing.Model
     | DetailsPage Details.Model
+    | NotFound
 
 
 type Msg
@@ -34,16 +35,11 @@ type Msg
 
 init : Url -> Nav.Key -> ( Model, Cmd Msg )
 init url key =
-    -- TODO Parse url here and show page accordingly
     let
-        ( model, cmd ) =
-            Listing.init
+        defaultModel =
+            { navKey = key, page = NotFound }
     in
-    ( { navKey = key
-      , page = ListingPage model
-      }
-    , Cmd.map GotListingMsg cmd
-    )
+    urlChanged defaultModel url
 
 
 
@@ -82,11 +78,14 @@ linkClicked model urlRequest =
 urlChanged : Model -> Url -> ( Model, Cmd Msg )
 urlChanged model url =
     case Route.fromUrl url of
-        Route.Listing ->
+        Just Route.Listing ->
             updateListingPage model Listing.init
 
-        Route.PackageDetails pkgId ->
+        Just (Route.PackageDetails pkgId) ->
             updateDetailsPage model (Details.init pkgId)
+
+        Nothing ->
+            ( { model | page = NotFound }, Cmd.none )
 
 
 updateListingPage : Model -> ( Listing.Model, Cmd Listing.Msg ) -> ( Model, Cmd Msg )
@@ -115,6 +114,9 @@ view model =
 
         DetailsPage packageDetails ->
             pageLayout (Details.view packageDetails) GotDetailsMsg
+
+        NotFound ->
+            pageLayout notFoundPage never
 
 
 pageLayout : Element msg -> (msg -> Msg) -> Browser.Document Msg

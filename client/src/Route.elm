@@ -13,9 +13,9 @@ type alias PackageId =
     String
 
 
-fromUrl : Url -> Route
+fromUrl : Url -> Maybe Route
 fromUrl =
-    Parser.parse parser >> Maybe.withDefault Listing
+    Parser.parse parser
 
 
 parser : Parser.Parser (Route -> a) a

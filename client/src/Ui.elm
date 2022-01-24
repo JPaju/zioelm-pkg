@@ -1,6 +1,17 @@
-module Ui exposing (blue, errorPage, grey, loadingPage, loadingSpinner, pageHeader, red, subHeader, textInput)
+module Ui exposing
+    ( blue
+    , errorPage
+    , grey
+    , loadingPage
+    , loadingSpinner
+    , notFoundPage
+    , pageHeader
+    , red
+    , subHeader
+    , textInput
+    )
 
-import Element exposing (Attribute, Color, Element, centerX, centerY, column, el, fill, maximum, row, spacing, text, width)
+import Element exposing (Attribute, Color, Element, centerX, centerY, column, el, fill, height, maximum, row, spacing, text, width)
 import Element.Font as Font
 import Element.Input as Input
 import Element.Region as Region
@@ -11,6 +22,10 @@ import Widget.Material exposing (defaultPalette, progressIndicator)
 spinnerStyles : Widget.ProgressIndicatorStyle msg
 spinnerStyles =
     progressIndicator defaultPalette
+
+
+
+---- COMPONENTS ----
 
 
 loadingSpinner : List (Attribute msg) -> Element msg
@@ -27,21 +42,6 @@ pageHeader attributes headerText =
 subHeader : List (Attribute msg) -> String -> Element msg
 subHeader attributes headerText =
     el (attributes ++ [ Region.heading 3, Font.size 24, Font.semiBold ]) (text headerText)
-
-
-loadingPage : String -> Element msg
-loadingPage description =
-    column [ centerX, centerY, spacing 25 ]
-        [ text ("Loading " ++ description)
-        , loadingSpinner [ centerX, centerY ]
-        ]
-
-
-errorPage : String -> Element msg
-errorPage errorMessage =
-    row [ centerX, centerY, spacing 20 ]
-        [ text errorMessage
-        ]
 
 
 textInput : List (Attribute msg) -> String -> (String -> msg) -> String -> Element msg
@@ -64,6 +64,31 @@ textInput attributes label onChange value =
             labelText
                 |> Input.labelAbove [ Font.size 12, Font.alignLeft, Font.color grey ]
         }
+
+
+
+---- PAGES ----
+
+
+loadingPage : String -> Element msg
+loadingPage description =
+    column [ centerX, centerY, spacing 25 ]
+        [ text ("Loading " ++ description)
+        , loadingSpinner [ centerX, centerY ]
+        ]
+
+
+errorPage : String -> Element msg
+errorPage errorMessage =
+    row [ centerX, centerY, spacing 20 ]
+        [ text errorMessage
+        ]
+
+
+notFoundPage : Element msg
+notFoundPage =
+    column [ width fill, height fill ]
+        [ el [ centerX, centerY, Font.size 36 ] (text "404: Page not found") ]
 
 
 red : Color
