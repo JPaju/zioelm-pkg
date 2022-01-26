@@ -2,7 +2,11 @@ module Package exposing
     ( Dependency(..)
     , Package
     , PackageDetails
+    , PackageId(..)
     , PackageListing
+    , PackageName
+    , getIdStr
+    , getNameStr
     , listingDecoder
     , packageDecoder
     , packageDetailsDecoder
@@ -22,14 +26,22 @@ import Url exposing (Protocol(..))
 
 
 type alias Package =
-    { id : String
-    , name : String
+    { id : PackageId
+    , name : PackageName
     }
 
 
+type PackageId
+    = PackageId String
+
+
+type PackageName
+    = PackageName String
+
+
 type alias PackageDetails =
-    { id : String
-    , name : String
+    { id : PackageId
+    , name : PackageName
     , description : String
     , dependencies : List Dependency
     , reverseDependencies : List Dependency
@@ -46,9 +58,23 @@ type alias PackageListing =
     List Package
 
 
+getIdStr : PackageId -> String
+getIdStr id =
+    case id of
+        PackageId idStr ->
+            idStr
+
+
+getNameStr : PackageName -> String
+getNameStr name =
+    case name of
+        PackageName nameStr ->
+            nameStr
+
+
 packageUrl : Package -> String
-packageUrl { id } =
-    "/package/" ++ id
+packageUrl pkg =
+    "/package/" ++ getIdStr pkg.id
 
 
 
@@ -87,7 +113,7 @@ viewPackage : Package -> Element msg
 viewPackage pkg =
     Element.link
         packageAttributes
-        { url = packageUrl pkg, label = text pkg.name }
+        { url = packageUrl pkg, label = pkg.name |> getNameStr |> text }
 
 
 viewDependency : Dependency -> Element msg
@@ -112,7 +138,6 @@ viewUnknownDependency { name } =
 viewAlternatives : List Dependency -> Element msg
 viewAlternatives dependencies =
     let
-    
         divider =
             el [] (text " or ")
 
@@ -120,7 +145,6 @@ viewAlternatives dependencies =
             dependencies
                 |> List.map viewDependency
                 |> List.intersperse divider
-
     in
     row [ spacing 10, Border.solid, Border.width 2, padding 5, Border.rounded 20 ] alternatives
 
@@ -137,15 +161,25 @@ listingDecoder =
 packageDecoder : Decoder Package
 packageDecoder =
     Decode.succeed Package
-        |> required "id" Decode.string
-        |> required "name" Decode.string
+        |> required "id" idDecoder
+        |> required "name" nameDecoder
+
+
+idDecoder : Decoder PackageId
+idDecoder =
+    Decode.map PackageId Decode.string
+
+
+nameDecoder : Decoder PackageName
+nameDecoder =
+    Decode.map PackageName Decode.string
 
 
 packageDetailsDecoder : Decoder PackageDetails
 packageDetailsDecoder =
     Decode.succeed PackageDetails
-        |> required "id" Decode.string
-        |> required "name" Decode.string
+        |> required "id" idDecoder
+        |> required "name" nameDecoder
         |> required "description" Decode.string
         |> required "dependencies" (Decode.list dependencyDecoder)
         |> required "reverseDependencies" (Decode.list dependencyDecoder)

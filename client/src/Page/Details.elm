@@ -1,11 +1,13 @@
 module Page.Details exposing (..)
 
 import Api exposing (RemoteData(..))
-import Element exposing (Element, centerX, column, el, fill, maximum, paragraph, spacing, text, width)
+import Element exposing (Element, centerX, column, el, fill, maximum, paddingXY, paragraph, spacing, text, width)
 import Html exposing (details)
 import Http
-import Package exposing (Dependency(..), PackageDetails, viewDependency)
+import Package exposing (Dependency(..), PackageDetails, PackageId, viewDependency)
 import Ui
+import Widget
+import Widget.Material as Material
 
 
 type alias Model =
@@ -17,7 +19,7 @@ type Msg
     = GotPackageDetails (Result Http.Error PackageDetails)
 
 
-init : String -> ( Model, Cmd Msg )
+init : PackageId -> ( Model, Cmd Msg )
 init pkgId =
     ( { remoteDetails = Loading }, Api.fetchPackageDetails pkgId GotPackageDetails )
 
@@ -51,12 +53,17 @@ viewDetails : PackageDetails -> Element msg
 viewDetails { name, description, dependencies, reverseDependencies } =
     let
         header =
-            Ui.pageHeader [ centerX ] ("Package: " ++ name)
+            Ui.pageHeader [ centerX ] ("Package: " ++ Package.getNameStr name)
+
+        divider =
+            Widget.divider (Material.fullBleedDivider Material.defaultPalette) []
 
         info =
             column [ centerX, width (fill |> maximum 700), spacing 50 ]
                 [ detailsPageSection "Description" (paragraph [] [ el [] (text description) ])
+                , divider
                 , detailsPageSection "Dependencies" (viewDependencies dependencies)
+                , divider
                 , detailsPageSection "Reverse dependencies" (viewDependencies reverseDependencies)
                 ]
     in
@@ -73,4 +80,8 @@ detailsPageSection sectionTitle content =
 
 viewDependencies : List Dependency -> Element msg
 viewDependencies dependencies =
-    column [ spacing 10 ] (List.map viewDependency dependencies)
+    if List.isEmpty dependencies then
+        el [ paddingXY 20 0 ] (text "None")
+
+    else
+        column [ spacing 10 ] (List.map viewDependency dependencies)
