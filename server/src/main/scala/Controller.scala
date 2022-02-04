@@ -1,25 +1,65 @@
+import sttp.model.StatusCode
+import sttp.tapir.ztapir.*
+import sttp.tapir.server.ziohttp.*
+
 import zio.*
 import zio.json.*
 import zhttp.http.*
+import zhttp.http.middleware.Cors.CorsConfig
+
+object Endpoint:
+  import scala.language.unsafeNulls
+
+  import sttp.tapir.Schema
+  import sttp.tapir.json.zio.jsonBody
+  import sttp.tapir.swagger.bundle.SwaggerInterpreter
+
+  implicit private def packageSchema: Schema[PackageDTO]               = Schema.derived
+  implicit private def dependencySchema: Schema[DependencyDTO]         = Schema.derived
+  implicit private def packageDetailsSchema: Schema[PackageDetailsDTO] = Schema.derived
+
+  val getPackages =
+    endpoint
+      .get
+      .in("packages")
+      .out(jsonBody[Seq[PackageDTO]])
+
+  val getPackageDetails =
+    endpoint
+      .get
+      .in("packages" / path[String]("packageId"))
+      .errorOut(statusCode(StatusCode.NotFound))
+      .out(jsonBody[PackageDetailsDTO])
+
+  val swagger = // Path: /docs/index.html
+    SwaggerInterpreter()
+      .fromEndpoints[Task](List(getPackages, getPackageDetails), "ZIO Elm package", "0.1")
 
 object Controller:
-  val allowEverything = CORSConfig(anyOrigin = true, anyMethod = true)
+  private val packageListingRoute =
+    Endpoint.getPackages.zServerLogic[Has[PackageService]](_ => ServerLogic.packageListing)
 
-  val httpApp: HttpApp[Has[PackageService], Nothing] = Http.collectZIO[Request] {
-    case Method.GET -> !! / "packages"      => packageListing
-    case Method.GET -> !! / "packages" / id => findPackageById(id)
-  } @@ Middleware.cors(allowEverything)
+  private val packageDetailsRoute =
+    Endpoint.getPackageDetails.zServerLogic[Has[PackageService]](ServerLogic.findPackageById)
 
-  private def packageListing =
+  private val appRoutes = List(
+    packageListingRoute,
+    packageDetailsRoute,
+  )
+
+  val allowEverything = CorsConfig(anyOrigin = true, anyMethod = true)
+
+  val httpApp =
+    ZioHttpInterpreter().toHttp(appRoutes) @@ Middleware.cors(allowEverything) ++
+      ZioHttpInterpreter().toHttp(Endpoint.swagger)
+
+object ServerLogic:
+  val packageListing =
     PackageService.getPackages.map { pkgs =>
-      val dtos = pkgs.map(PackageDTO.fromPackage)
-      Response.json(dtos.toJson)
+      pkgs.map(PackageDTO.fromPackage)
     }
 
-  private def findPackageById(id: String) =
+  def findPackageById(id: String) =
     PackageService
       .getPackageByName(id)
-      .fold(
-        err => Response.status(Status.NOT_FOUND),
-        pkg => Response.json(PackageDetailsDTO.fromPackage(pkg).toJson),
-      )
+      .map(PackageDetailsDTO.fromPackage)

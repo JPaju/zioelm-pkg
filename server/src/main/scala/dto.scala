@@ -20,7 +20,7 @@ object PackageDTO:
   def fromPackage(pkg: Package): PackageDTO =
     PackageDTO(pkg.name, pkg.name)
 
-  given JsonEncoder[PackageDTO] = DeriveJsonEncoder.gen[PackageDTO]
+  given JsonCodec[PackageDTO] = DeriveJsonCodec.gen[PackageDTO]
 
 object PackageDetailsDTO:
   def fromPackage(pkg: Package): PackageDetailsDTO =
@@ -32,7 +32,7 @@ object PackageDetailsDTO:
       reverseDependencies = pkg.reverseDependencies.map(DependencyDTO.fromPackageReference),
     )
 
-  given JsonEncoder[PackageDetailsDTO] = DeriveJsonEncoder.gen[PackageDetailsDTO]
+  given JsonCodec[PackageDetailsDTO] = DeriveJsonCodec.gen[PackageDetailsDTO]
 
 object DependencyDTO:
   def fromPackageReference(reference: PackageReference): DependencyDTO =
@@ -45,4 +45,4 @@ object DependencyDTO:
       case Dependency.Direct(dep) => fromPackageReference(dep)
       case Dependency.OneOf(deps) => OneOfDTO(deps.map(fromPackageReference))
 
-  given JsonEncoder[DependencyDTO] = DeriveJsonEncoder.gen[DependencyDTO]
+  given JsonCodec[DependencyDTO] = DeriveJsonCodec.gen[DependencyDTO]
